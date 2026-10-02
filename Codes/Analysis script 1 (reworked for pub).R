@@ -10,27 +10,25 @@
 
 
 # Packages -----
-pkgs <- c(
-  "readxl","purrr","tidyverse",
-  "lme4","lmerTest",
-  "emmeans","multcomp","multcompView",
-  "ordinal",      # clmm — ordinal mixed model
-  "glmmTMB",      # negative binomial GLMM
-  "DHARMa",       # residual diagnostics
-  "patchwork",    # multi-panel figures
-  "scales",       # axis helpers
-  "ggtext",       # markdown in plot labels
-  "ggdist",       # raincloud / halfeye
-  "ggpubr",       # stat_cor
-  "colorspace",   # colour utilities
-  "flextable",    # Word-ready tables
-  "officer",      # write .docx
-  "writexl"       # write .xlsx
-)
-new_p <- pkgs[!pkgs %in% rownames(installed.packages())]
-if (length(new_p)) { message("Installing: ", paste(new_p, collapse=", "))
-  install.packages(new_p) }
-invisible(lapply(pkgs, library, character.only = TRUE))
+library(readxl)
+library(tidyverse)
+library(lmerTest)
+library(lme4)
+library(multcompView)
+library(multcomp)
+library(emmeans)
+library(ordinal)
+library(glmmTMB)
+library(DHARMa)
+library(patchwork)
+library(scales)
+library(ggtext)
+library(ggdist)
+library(ggpubr)
+library(colorspace)
+library(flaxtable)
+library(officer)
+library(writexl)
 
 # Path setting  -----
 # data paths
@@ -40,3 +38,6 @@ path2   <- "/Users/Esmael/Desktop/Data Science Library/Data for play/Ekhaga_Agro
 # outoput directories
 out_dir <- "/Users/Esmael/Desktop/Data Science Library/Data for play/Ekhaga_Agroecology/MS1_Season1_Output"
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+
+
+# data wrangling starts here ----
