@@ -26,7 +26,7 @@ library(ggtext)
 library(ggdist)
 library(ggpubr)
 library(colorspace)
-library(flaxtable)
+library(flextable)
 library(officer)
 library(writexl)
 
@@ -83,9 +83,79 @@ rd <- function(path, sheets, yr) {
 }
 
 dfs1 <- rd(path1, sn, "Y1")
-dfs2 <- rd(path2, sn, "Y2")   # loaded but only Y1 used below
+dfs2 <- rd(path2, sn, "Y2")   # loaded but only Y1 will be used in this analysis
 
 FAW_raw  <- bind_rows(dfs1$FAW_DAMAGE, dfs2$FAW_DAMAGE)
 HARV_raw <- bind_rows(dfs1$HARVEST_DATA, dfs2$HARVEST_DATA)
 EL_raw   <- bind_rows(dfs1$EGG_LARVAE_BORDER_CORE_PLOTS,
                       dfs2$EGG_LARVAE_BORDER_CORE_PLOTS)
+
+
+
+# data wrangling for only season ----
+sev_map <- c("0"=0,"1"=10,"2"=20,"3"=40,"4"=60,"5"=90,"6"=100)
+
+add_design <- function(data) {
+  data %>% mutate(
+    Farm       = factor(Farm),
+    Tree_cover = factor(Tree_cover, levels = TREE_LEVELS),
+    Treatment  = factor(Treatment,  levels = TRT_LEVELS),
+    Tillage    = factor(ifelse(grepl("MTM", Treatment),
+                               "Min-Till","Conv-Till"),
+                        levels = c("Conv-Till","Min-Till")),
+    Cropping   = factor(
+      case_when(grepl("^NI", Treatment) ~ "Natural",
+                grepl("^CP", Treatment) ~ "Cowpea",
+                grepl("^AI", Treatment) ~ "Agroforestry"),
+      levels = c("Natural","Cowpea","Agroforestry"))
+  )
+}
+
+# FAW Damage
+FAW <- FAW_raw %>%
+  filter(Year == "Y1") %>%
+  add_design() %>%
+  mutate(
+    Weeks      = factor(Weeks,
+                        levels = sort(unique(as.numeric(as.character(Weeks))))),
+    Damage_index = FAW_Damage - 1L,
+    Damage_pct = as.numeric(sev_map[as.character(Damage_index)]),
+    Damage_ord = factor(Damage_index, ordered = TRUE)
+  )
+
+# Egg/Larvae
+EL <- EL_raw %>%
+  filter(Year == "Y1") %>%
+  rename(
+    Tree_cover    = `Tree cover`,
+    Larvae_border = `Larvae No in border row`,
+    Larvae_core   = `Larvae No in Core Plot`,
+    Eggs_border   = `Egg masses in border row`
+  ) %>%
+  add_design() %>%
+  mutate(
+    Week = factor(Week,
+                  levels = sort(unique(as.numeric(as.character(Week)))))
+  )
+
+# Yield
+Yield <- HARV_raw %>%
+  filter(Year == "Y1") %>%
+  rename(Tree_cover = Tree_Cover, Treatment = Treatments) %>%
+  add_design()
+
+cat("\nData dimensions (Season 1 only)\n")
+cat("FAW damage  :", nrow(FAW),   "observations\n")
+cat("Egg/Larvae  :", nrow(EL),    "observations\n")
+cat("Yield       :", nrow(Yield), "observations\n")
+
+cat("\nFactor levels\n")
+cat("Treatment :", paste(levels(FAW$Treatment),  collapse=", "), "\n")
+cat("Tree cover:", paste(levels(FAW$Tree_cover), collapse=", "), "\n")
+cat("Weeks (FAW):", paste(levels(FAW$Weeks),     collapse=", "), "\n")
+cat("Weeks (EL) :", paste(levels(EL$Week),       collapse=", "), "\n")
+
+cat("\nDamage distribution (Season 1)\n")
+print(with(FAW, table(Damage_index, Tree_cover)))
+cat("\nDamage by Treatment\n")
+print(with(FAW, table(Damage_index, Treatment)))
